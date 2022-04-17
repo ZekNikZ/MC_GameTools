@@ -1,0 +1,62 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+plugins {
+    id 'java'
+}
+
+group = 'dev.mattrm.mc'
+version = '4.0.0'
+
+sourceCompatibility = '17'
+targetCompatibility = '17'
+
+repositories {
+    mavenCentral()
+    maven {
+        name = 'spigotmc-repo'
+        url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/'
+    }
+    maven {
+        name = 'sonatype'
+        url = 'https://oss.sonatype.org/content/groups/public/'
+    }
+}
+
+configurations {
+    extraLibs
+}
+
+dependencies {
+    compileOnly 'org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT'
+    compileOnly 'org.spigotmc:plugin-annotations:1.2.3-SNAPSHOT'
+    compileOnly 'org.jetbrains:annotations:23.0.0'
+
+    annotationProcessor 'org.spigotmc:plugin-annotations:1.2.3-SNAPSHOT'
+
+    compileOnly 'org.atteo.classindex:classindex:3.11'
+    extraLibs 'org.atteo.classindex:classindex:3.11'
+    annotationProcessor 'org.atteo.classindex:classindex:3.11'
+}
+
+jar {
+    from {
+        configurations.extraLibs.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+processResources {
+    from sourceSets.main.resources
+    inputs.property 'version', version
+    filter ReplaceTokens, tokens: [version: version]
+}
+
+task processSources(type: Sync) {
+    from sourceSets.main.java
+    inputs.property 'version', version
+    filter ReplaceTokens, tokens: [version: version]
+    into "$buildDir/src"
+}
+
+compileJava {
+    source = processSources.outputs
+}
